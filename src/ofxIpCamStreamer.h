@@ -21,7 +21,6 @@ public:
 //        cout << cv::getBuildInformation() << endl;
         ipCam.open("rtsp://admin:Punkt123@192.168.0.60", cv::CAP_FFMPEG);
         ipCam.set(CV_CAP_PROP_BUFFERSIZE, 5);
-        
         if(!ipCam.isOpened())
         {
             std::cout << "Input error\n";
@@ -29,6 +28,8 @@ public:
         }
         ipCam.read(camMat);
         
+        calibration.load("calibrations/calibrationCamera.yml");
+
         startThread();
     }
     
@@ -41,6 +42,14 @@ public:
 
     }
     
+    void start(){
+        startThread();
+    }
+    
+    void stop(){
+        stopThread();
+    }
+    
     cv::Mat get(){
         lock();
         cv::Mat mat = outMat;
@@ -50,17 +59,18 @@ public:
     }
     
     void draw(){
-        ofxCv::drawMat(camMat, 0,0);
+        ofxCv::drawMat(this->get(), 0,0);
     }
     
     void threadedFunction() {
         while(isThreadRunning()) {
             ipCam.read(camMat);
-            resize(camMat, camMat, cv::Size(1280, 720), 0, 0, INTER_CUBIC);
+//            resize(camMat, camMat, cv::Size(1280, 720), 0, 0, INTER_CUBIC);
             cvtColor(camMat, camMat, CV_BGR2RGB);
+            if(calibration.isReady()) calibration.undistort(camMat, camMat);
             
             if(tryLock()){
-            outMat = camMat;
+            camMat.copyTo(outMat);
             unlock();
             }
         }
@@ -73,6 +83,7 @@ public:
 private:
     VideoCapture ipCam;
     cv::Mat camMat, outMat;
+    Calibration calibration;
 };
 
 #endif /* IpCamStreamer_h */
