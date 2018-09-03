@@ -29,10 +29,10 @@ public:
         }
         else ipCam.read(camMat);
 
-        imageLoad.load("camMat_gitte.jpg");
+        imageLoad.load("camMat_day.jpg");
 
         
-        calibration.load("calibrations/calibrationCamera.yml");
+        calibration.load("calibrationCamera.yml");
         if(calibration.isReady()) parameters.add(doUndistort);
 
         startThread();
@@ -94,7 +94,7 @@ public:
     
     ofParameter<int> outWidth{"outWidth", 1920, 0, 1920};
     ofParameter<int> outHeight{"outHeight", 1080, 0, 1080};
-    ofParameter<bool> doUndistort{"doUndistort", true};
+    ofParameter<bool> doUndistort{"doUndistort", false};
     
     ofParameterGroup parameters{"IP_Cam", outWidth, outHeight};
     
