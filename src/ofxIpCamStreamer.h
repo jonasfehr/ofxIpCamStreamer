@@ -27,10 +27,17 @@ public:
             return -1;
         }
         ipCam.read(camMat);
+
+        ofImage imageLoad;
+        imageLoad.load("camMat_day.jpg");
+        toCv(imageLoad).copyTo(camMat);
+
         
-        calibration.load("calibrations/calibrationCamera.yml");
+//        calibration.load("calibrations/calibrationCamera.yml");
 
         startThread();
+        
+        outMat = Mat::zeros(1920,1080, CV_8UC3);
     }
     
     ~ofxIpCamStreamer(){
