@@ -16,24 +16,24 @@ using namespace ofxCv;
 
 class ofxIpCamStreamer : public ofThread{
 public:
-    
+    ofImage imageLoad;
+
     ofxIpCamStreamer(){
-//        cout << cv::getBuildInformation() << endl;
+        cout << cv::getBuildInformation() << endl;
         ipCam.open("rtsp://admin:Punkt123@192.168.0.60", cv::CAP_FFMPEG);
         ipCam.set(CV_CAP_PROP_BUFFERSIZE, 5);
         if(!ipCam.isOpened())
         {
-            std::cout << "Input error\n";
-            return -1;
+            ofLog() << "ipCam input error\n";
+            useLoadedImage = true;
         }
-        ipCam.read(camMat);
+        else ipCam.read(camMat);
 
-        ofImage imageLoad;
-        imageLoad.load("camMat_day.jpg");
-        toCv(imageLoad).copyTo(camMat);
+        imageLoad.load("camMat_gitte.jpg");
 
         
-//        calibration.load("calibrations/calibrationCamera.yml");
+        calibration.load("calibrations/calibrationCamera.yml");
+        if(calibration.isReady()) parameters.add(doUndistort);
 
         startThread();
         
@@ -71,10 +71,14 @@ public:
     
     void threadedFunction() {
         while(isThreadRunning()) {
-            ipCam.read(camMat);
-//            resize(camMat, camMat, cv::Size(1280, 720), 0, 0, INTER_CUBIC);
-            cvtColor(camMat, camMat, CV_BGR2RGB);
-            if(calibration.isReady()) calibration.undistort(camMat, camMat);
+            if(!useLoadedImage){
+                ipCam.read(camMat);
+                cvtColor(camMat, camMat, CV_BGR2RGB);
+            }
+            else toCv(imageLoad).copyTo(camMat);
+
+            if(camMat.rows != outWidth && camMat.cols != outHeight) resize(camMat, camMat, cv::Size(outWidth.get(), outHeight.get()), 0, 0, INTER_CUBIC);
+            if(doUndistort && calibration.isReady()) calibration.undistort(camMat, camMat);
             
             if(tryLock()){
             camMat.copyTo(outMat);
@@ -87,10 +91,18 @@ public:
         stopThread();
     }
     
+    
+    ofParameter<int> outWidth{"outWidth", 1920, 0, 1920};
+    ofParameter<int> outHeight{"outHeight", 1080, 0, 1080};
+    ofParameter<bool> doUndistort{"doUndistort", true};
+    
+    ofParameterGroup parameters{"IP_Cam", outWidth, outHeight};
+    
 private:
     VideoCapture ipCam;
     cv::Mat camMat, outMat;
     Calibration calibration;
+    bool useLoadedImage;
 };
 
 #endif /* IpCamStreamer_h */
